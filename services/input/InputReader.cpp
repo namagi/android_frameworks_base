@@ -967,12 +967,12 @@ void InputDevice::process(const RawEvent* rawEvents, size_t count) {
 
             // Old touchscreen sensors need to send a fake BTN_TOUCH (BTN_LEFT)
 
-            if (rawEvent->scanCode == ABS_MT_TOUCH_MAJOR && rawEvent->type==EV_ABS) {
+            if (rawEvent->scanCode == ABS_MT_TOUCH_MAJOR && rawEvent->type == EV_ABS) {
 
                 z_data = rawEvent->value;
                 touched = (0 != z_data);
             }
-            else if (rawEvent->scanCode == ABS_MT_POSITION_Y) {
+            else if (rawEvent->scanCode == ABS_MT_POSITION_Y && rawEvent->type == EV_ABS) {
 
                 RawEvent event;
                 memset(&event, 0, sizeof(event));
@@ -1005,7 +1005,7 @@ void InputDevice::process(const RawEvent* rawEvents, size_t count) {
                     mapper->process(&event);
                 }
 
-                LOGD("Fake event sent, touch=%d !", touched);
+                // LOGD("Fake event sent, touch=%d !", touched);
             }
             else
 #endif //LEGACY_TOUCHSCREEN
