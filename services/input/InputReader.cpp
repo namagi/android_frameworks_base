@@ -932,7 +932,7 @@ void InputDevice::process(const RawEvent* rawEvents, size_t count) {
     // gamepad button presses are handled by different mappers but they should be dispatched
     // in the order received.
 #ifdef LEGACY_TOUCHSCREEN
-    static int32_t touched, z_data;
+    static int32_t touched, z_data, w_data;
 #endif
     size_t numMappers = mMappers.size();
     for (const RawEvent* rawEvent = rawEvents; count--; rawEvent++) {
@@ -968,18 +968,16 @@ void InputDevice::process(const RawEvent* rawEvents, size_t count) {
             // Old touchscreen sensors need to send a fake BTN_TOUCH (BTN_LEFT)
 
             if (rawEvent->scanCode == ABS_MT_TOUCH_MAJOR && rawEvent->type == EV_ABS) {
-
                 z_data = rawEvent->value;
                 touched = (0 != z_data);
-            }
-            else if (rawEvent->scanCode == ABS_MT_POSITION_Y && rawEvent->type == EV_ABS) {
-
+            } else if (rawEvent->scanCode == ABS_MT_WIDTH_MAJOR && rawEvent->type == EV_ABS) {
+                w_data = rawEvent->value;
+            } else if (rawEvent->scanCode == ABS_MT_POSITION_Y && rawEvent->type == EV_ABS) {
                 RawEvent event;
                 memset(&event, 0, sizeof(event));
                 event.when = rawEvent->when;
                 event.deviceId = rawEvent->deviceId;
                 event.scanCode = rawEvent->scanCode;
-
                 event.type = rawEvent->type;
                 event.value = rawEvent->value;
                 for (size_t i = 0; i < numMappers; i++) {
@@ -996,9 +994,18 @@ void InputDevice::process(const RawEvent* rawEvents, size_t count) {
                     mapper->process(&event);
                 }
 
+                /* ABS_MT_TOUCH_MAJOR from ABS_MT_WIDTH_MAJOR */
+                event.type = rawEvent->type;
+                event.scanCode = ABS_MT_TOUCH_MAJOR;
+                event.value = w_data;
+                for (size_t i = 0; i < numMappers; i++) {
+                    mapper = mMappers[i];
+                    mapper->process(&event);
+                }
+
                 event.type = EV_KEY;
                 event.scanCode = BTN_TOUCH;
-                event.keyCode = BTN_LEFT;
+                event.keyCode = AKEYCODE_UNKNOWN;
                 event.value = touched;
                 for (size_t i = 0; i < numMappers; i++) {
                     mapper = mMappers[i];
