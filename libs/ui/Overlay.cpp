@@ -15,6 +15,7 @@
  */
 
 #define LOG_TAG "Overlay"
+//#define LOG_NDEBUG 0
 
 #include <binder/IMemory.h>
 #include <binder/Parcel.h>
@@ -202,7 +203,7 @@ int32_t Overlay::getBufferCount() const
 
 void* Overlay::getBufferAddress(overlay_buffer_t buffer)
 {
-    LOGD("%s: %d", __FUNCTION__, (int)buffer);
+    LOGV("%s: %d", __FUNCTION__, (int)buffer);
     if ((uint32_t)buffer >= NUM_BUFFERS) {
         return NULL;
     }
@@ -222,6 +223,7 @@ void Overlay::destroy() {
 
     delete[] mBuffers;
     delete[] mQueued;
+    close(mBuffers[0].fd);
     pthread_mutex_destroy(&queue_mutex);
 }
 

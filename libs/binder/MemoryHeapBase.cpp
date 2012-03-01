@@ -50,7 +50,6 @@ MemoryHeapBase::MemoryHeapBase(size_t size, uint32_t flags, char const * name)
     : mFD(-1), mSize(0), mBase(MAP_FAILED), mFlags(flags),
       mDevice(0), mNeedUnmap(false), mOffset(0)
 {
-    //LOGD("%s: size=%d, flags=%x, name=%s", __FUNCTION__, size, flags, name);
     const size_t pagesize = getpagesize();
     size = ((size + pagesize-1) & ~(pagesize-1));
     int fd = ashmem_create_region(name == NULL ? "MemoryHeapBase" : name, size);
@@ -68,7 +67,6 @@ MemoryHeapBase::MemoryHeapBase(const char* device, size_t size, uint32_t flags)
     : mFD(-1), mSize(0), mBase(MAP_FAILED), mFlags(flags),
       mDevice(0), mNeedUnmap(false), mOffset(0)
 {
-    //LOGD("%s: device=%s, size=%d, flags=%x", __FUNCTION__, device, size, flags);
     int open_flags = O_RDWR;
     if (flags & NO_CACHING)
         open_flags |= O_SYNC;
@@ -88,7 +86,6 @@ MemoryHeapBase::MemoryHeapBase(int fd, size_t size, uint32_t flags, uint32_t off
     : mFD(-1), mSize(0), mBase(MAP_FAILED), mFlags(flags),
       mDevice(0), mNeedUnmap(false), mOffset(0)
 {
-    //LOGD("%s: fd=%d, size=%d, flags=%x, offset=%d", __FUNCTION__, fd, size, flags, offset);
     const size_t pagesize = getpagesize();
     size = ((size + pagesize-1) & ~(pagesize-1));
     mapfd(dup(fd), size, offset);
@@ -109,18 +106,6 @@ status_t MemoryHeapBase::init(int fd, void *base, int size, int flags, const cha
 
 status_t MemoryHeapBase::mapfd(int fd, size_t size, uint32_t offset)
 {
-/*    LOGD("%s: fd=%d, size=%d, offset=%d", __FUNCTION__, fd, size, offset);
-    char *link = (char*)malloc(255);
-    char *name = (char*)calloc(1, 255);
-    sprintf(link, "/proc/self/fd/%d", fd);
-    int rv = readlink(link, name, 255);
-    if (rv > 0) {
-	name[rv]=0;
-	LOGD("%s: real file name: %s", __FUNCTION__, name);
-    }
-    free(link);
-    free(name);*/
-    
     if (size == 0) {
         // try to figure out the size automatically
 #ifdef HAVE_ANDROID_OS
@@ -147,7 +132,6 @@ status_t MemoryHeapBase::mapfd(int fd, size_t size, uint32_t offset)
             close(fd);
             return -errno;
         }
-        //LOGD("mmap(fd=%d, base=%p, size=%lu)", fd, base, size);
         mBase = base;
         mNeedUnmap = true;
     } else  {
@@ -170,7 +154,6 @@ void MemoryHeapBase::dispose()
     int fd = android_atomic_or(-1, &mFD);
     if (fd >= 0) {
         if (mNeedUnmap) {
-            //LOGD("munmap(fd=%d, base=%p, size=%lu)", fd, mBase, mSize);
             munmap(mBase, mSize);
         }
         mBase = 0;
