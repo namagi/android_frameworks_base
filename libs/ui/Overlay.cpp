@@ -222,9 +222,9 @@ void Overlay::destroy() {
         }
     }
 
+    close(mBuffers[0].fd);
     delete[] mBuffers;
     delete[] mQueued;
-    close(mBuffers[0].fd);
     pthread_mutex_destroy(&queue_mutex);
 }
 
