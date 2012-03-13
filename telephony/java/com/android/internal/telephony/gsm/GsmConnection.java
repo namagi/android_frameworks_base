@@ -465,8 +465,15 @@ public class GsmConnection extends Connection {
         }
 
         if (Phone.DEBUG_PHONE) log("--dssds----"+cnapName);
-        cnapNamePresentation = dc.namePresentation;
-        numberPresentation = dc.numberPresentation;
+
+        /** outgoing calls should keep the initially set
+            Connection.PRESENTATION_ALLOWED, otherwise they
+            could be identified and logged as "Unknown",
+            depending on CallerID setting. **/
+        if (isIncoming) {
+            cnapNamePresentation = dc.namePresentation;
+            numberPresentation = dc.numberPresentation;
+        }
 
         if (newParent != parent) {
             if (parent != null) {
