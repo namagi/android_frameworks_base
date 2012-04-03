@@ -610,7 +610,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
                             regState = Integer.parseInt(states[0]);
 
                             // states[3] (if present) is the current radio technology
-                            if (states.length >= 4 && states[3] != null) {
+                            if (states.length >= 4 && states[3] != null && !states[3].equals("")) {
                                 type = Integer.parseInt(states[3]);
                             }
                             if ((states.length >= 5 ) && (regState == 3)) {
@@ -671,7 +671,9 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
     }
 
     private void setSignalStrengthDefaultValues() {
-        mSignalStrength = new SignalStrength(99, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, true);
+        // TODO Make a constructor only has boolean gsm as parameter
+        mSignalStrength = new SignalStrength(99, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, SignalStrength.INVALID_SNR, -1, true);
     }
 
     /**
@@ -1023,7 +1025,7 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
         int lteSignalStrength = -1;
         int lteRsrp = -1;
         int lteRsrq = -1;
-        int lteRssnr = -1;
+        int lteRssnr = SignalStrength.INVALID_SNR;
         int lteCqi = -1;
 
         if (ar.exception != null) {

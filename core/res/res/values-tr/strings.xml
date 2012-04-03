@@ -1,21 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-/* //device/apps/common/assets/res/any/strings.xml
-**
-** Copyright 2006, The Android Open Source Project
-**
-** Licensed under the Apache License, Version 2.0 (the "License");
-** you may not use this file except in compliance with the License.
-** You may obtain a copy of the License at
-**
-**     http://www.apache.org/licenses/LICENSE-2.0
-**
-** Unless required by applicable law or agreed to in writing, software
-** distributed under the License is distributed on an "AS IS" BASIS,
-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-** See the License for the specific language governing permissions and
-** limitations under the License.
-*/
+ <!--Copyright (C) 2006 The Android Open Source Project
+     Copyright (C) 2012 The CyanogenMod Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
  -->
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
@@ -153,7 +150,6 @@
     <!-- #CM-MOD-START -->
     <string name="reboot_system" product="tablet">Tableti yeniden başlat</string>
     <string name="reboot_system" product="default">Telefonu yeniden başlat</string>
-    <string name="global_action_screenshot">Ekran görüntüsü</string>
     <string name="reboot_reboot">Yeniden başlat</string>
     <string name="reboot_recovery">Kurtar</string>
     <string name="reboot_bootloader">Bootloader</string>
@@ -163,12 +159,9 @@
     <string name="reboot_progress">Yeniden başlatılıyor\u2026</string>
     <string name="reboot_confirm">Telefonunuz yeniden başlatılacak.</string>
     <!-- #CM-MOD-END -->
-    <!-- no translation found for silent_mode_silent (319298163018473078) -->
-    <skip />
-    <!-- no translation found for silent_mode_vibrate (7072043388581551395) -->
-    <skip />
-    <!-- no translation found for silent_mode_ring (8592241816194074353) -->
-    <skip />
+    <string name="silent_mode_silent" msgid="319298163018473078">"Telefon zili kapalı"</string>
+    <string name="silent_mode_vibrate" msgid="7072043388581551395">"Telefon zili titreşimde"</string>
+    <string name="silent_mode_ring" msgid="8592241816194074353">"Telefon zili açık"</string>
     <string name="shutdown_progress" msgid="2281079257329981203">"Kapanıyor…"</string>
     <string name="shutdown_confirm" product="tablet" msgid="3385745179555731470">"Tabletiniz kapanacak."</string>
     <string name="shutdown_confirm" product="default" msgid="649792175242821353">"Telefonunuz kapanacak."</string>
@@ -181,7 +174,8 @@
     <string name="global_action_power_off" msgid="4471879440839879722">"Kapat"</string>
     <!-- #CM-MOD-START -->
     <string name="global_action_reboot">Yeniden başlat</string>
-    <string name="global_action_choose_profile">Profil seç</string>
+    <string name="global_action_choose_profile">Profil</string>
+    <string name="global_action_screenshot">Ekran görüntüsü</string>
     <!-- #CM-MOD-END -->
     <string name="global_action_toggle_silent_mode" msgid="8219525344246810925">"Sessiz mod"</string>
     <string name="global_action_silent_mode_on_status" msgid="3289841937003758806">"Ses KAPALI"</string>
@@ -932,8 +926,8 @@
     <string name="no" msgid="5141531044935541497">"İptal"</string>
     <string name="dialog_alert_title" msgid="2049658708609043103">"Dikkat"</string>
     <string name="loading" msgid="1760724998928255250">"Yükleniyor..."</string>
-    <string name="capital_on" msgid="1544682755514494298">"AÇIK"</string>
-    <string name="capital_off" msgid="6815870386972805832">"KAPALI"</string>
+    <string name="capital_on">"AÇK"</string>
+    <string name="capital_off">"KPL"</string>
     <string name="whichApplication" msgid="4533185947064773386">"İşlemi şunu kullanarak tamamla"</string>
     <string name="alwaysUse" msgid="4583018368000610438">"Varsayılan olarak bu işlem için kullan."</string>
     <string name="clearDefaultHintMsg" msgid="4815455344600932173">"Giriş Ayarları &gt; Uygulamalar &gt; Uygulamaları yönet\'te varsayılanı temizleyin."</string>

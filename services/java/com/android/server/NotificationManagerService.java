@@ -873,7 +873,9 @@ public class NotificationManagerService extends INotificationManager.Stub
                     long identity = Binder.clearCallingIdentity();
                     try {
                         r.statusBarKey = mStatusBar.addNotification(n);
-                        mAttentionLight.pulse();
+                        if ((n.notification.flags & Notification.FLAG_SHOW_LIGHTS) != 0) {
+                            mAttentionLight.pulse();
+                        }
                     }
                     finally {
                         Binder.restoreCallingIdentity(identity);
@@ -1258,7 +1260,7 @@ public class NotificationManagerService extends INotificationManager.Stub
             return;
         }
 
-        for (String packageValuesString : customLedValuesString.split("|")) {
+        for (String packageValuesString : customLedValuesString.split("\\|")) {
             String[] packageValues = packageValuesString.split("=");
             if (packageValues.length != 2) {
                 Log.e(TAG, "Error parsing custom led values for unknown package");

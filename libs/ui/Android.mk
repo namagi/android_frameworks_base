@@ -67,10 +67,6 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_C_INCLUDES := \
     external/skia/include/core
 
-ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
-LOCAL_CFLAGS += -DQCOM_HARDWARE
-endif
-
 ifeq ($(BOARD_NO_RGBX_8888),true)
 LOCAL_CFLAGS += -DNO_RGBX_8888
 endif
