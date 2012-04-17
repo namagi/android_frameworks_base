@@ -54,7 +54,7 @@ public class CharacterPickerDialog extends Dialog
     public CharacterPickerDialog(Context context, View view,
                                  Editable text, String options,
                                  boolean insert) {
-        super(context, com.android.internal.R.style.Theme_Holo_Panel);
+        super(context, com.android.internal.R.style.Theme_Panel);
 
         mView = view;
         mText = text;
