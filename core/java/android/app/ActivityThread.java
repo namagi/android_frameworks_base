@@ -60,6 +60,7 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.StrictMode;
 import android.os.SystemClock;
+import android.os.SystemProperties;
 import android.util.AndroidRuntimeException;
 import android.util.DisplayMetrics;
 import android.util.EventLog;
@@ -3747,6 +3748,9 @@ public final class ActivityThread {
         // send up app name; do this *before* waiting for debugger
         Process.setArgV0(data.processName);
         android.ddm.DdmHandleAppName.setAppName(data.processName);
+        // hwui.process_list allows to restrict the hw renderer usage
+        // only to certain processes
+        String hwuiProcList = SystemProperties.get("hwui.process_list", "0");
 
         if (data.persistent) {
             // Persistent processes on low-memory devices do not get to
@@ -3756,6 +3760,8 @@ public final class ActivityThread {
             if (!ActivityManager.isHighEndGfx(display)) {
                 HardwareRenderer.disable(false);
             }
+        } else if (!hwuiProcList.equals("0") && !hwuiProcList.contains(data.processName)) {
+            HardwareRenderer.disable(false);
         }
         
         if (mProfiler.profileFd != null) {
