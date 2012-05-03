@@ -3765,6 +3765,7 @@ public final class ActivityThread {
             }
         } else if ((!hwuiWhitelist.equals("0") && !hwuiWhitelist.contains(data.processName))
                     || hwuiBlacklist.contains(data.processName)
+                    || data.processName.contains("com.android.systemui")
                     || data.processName.contains("launcher")
                     || data.processName.contains("trebuchet")) {
             HardwareRenderer.disable(false);
