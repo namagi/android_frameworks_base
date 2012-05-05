@@ -74,6 +74,8 @@ Overlay::Overlay(uint32_t width, uint32_t height, OverlayFormats format, overlay
     this->height = height;
     this->numFreeBuffers = 0;
 
+    mFormat = format;
+
     int bpp = getBppFromOverlayFormat(format);
     /* round up to next multiple of 8 */
     if (bpp & 7) {
@@ -261,7 +263,7 @@ uint32_t Overlay::getHeight() const {
 
 int32_t Overlay::getFormat() const {
     LOGW("%s", __FUNCTION__);
-    return 0;
+    return mFormat;
 }
 
 int32_t Overlay::getWidthStride() const {
