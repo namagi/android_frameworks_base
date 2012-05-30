@@ -1629,6 +1629,7 @@ public final class Settings {
 
         /**
          * Whether to prevent loud volume levels when headset is first plugged in.
+         * @hide
          */
         public static final String SAFE_HEADSET_VOLUME_RESTORE = "safe_headset_volume_restore";
 
@@ -2441,6 +2442,12 @@ public final class Settings {
          * @hide
          */
         public static final String WEATHER_USE_METRIC = "weather_use_metric";
+
+        /**
+         * Invert low/high temperature display
+         * @hide
+         */
+        public static final String WEATHER_INVERT_LOWHIGH = "weather_invert_lowhigh";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
