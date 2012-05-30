@@ -349,8 +349,11 @@ class KeyguardStatusViewManager implements OnClickListener {
         if (showWeather) {
             final long interval = Settings.System.getLong(resolver,
                     Settings.System.WEATHER_UPDATE_INTERVAL, 60); // Default to hourly
-            if (((System.currentTimeMillis() - mWeatherInfo.last_sync) / 60000) >= interval) {
+            boolean manualSync = (interval == 0);
+            if (!manualSync && (((System.currentTimeMillis() - mWeatherInfo.last_sync) / 60000) >= interval)) {
                 mHandler.sendEmptyMessage(QUERY_WEATHER);
+            } else if (manualSync && mWeatherInfo.last_sync == 0) {
+                setNoWeatherData();
             } else {
                 setWeatherData(mWeatherInfo);
             }
@@ -373,6 +376,8 @@ class KeyguardStatusViewManager implements OnClickListener {
                 Settings.System.WEATHER_SHOW_LOCATION, 1) == 1;
         boolean showTimestamp = Settings.System.getInt(resolver,
                 Settings.System.WEATHER_SHOW_TIMESTAMP, 1) == 1;
+        boolean invertLowhigh = Settings.System.getInt(resolver,
+                Settings.System.WEATHER_INVERT_LOWHIGH, 0) == 1;
 
         if (mWeatherPanel != null) {
             if (mWeatherCity != null) {
@@ -393,7 +398,7 @@ class KeyguardStatusViewManager implements OnClickListener {
                 mWeatherTemp.setText(w.temp);
             }
             if (mWeatherLowHigh != null) {
-                mWeatherLowHigh.setText(w.low + " | " + w.high);
+                mWeatherLowHigh.setText(invertLowhigh ? w.high + " | " + w.low : w.low + " | " + w.high);
             }
 
             if (mWeatherImage != null) {
