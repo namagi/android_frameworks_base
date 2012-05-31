@@ -137,6 +137,7 @@ public class KeyCharacterMap {
     private static SparseArray<KeyCharacterMap> sInstances = new SparseArray<KeyCharacterMap>();
 
     private final int mDeviceId;
+    private final String mKcm;
     private int mPtr;
 
     private static native int nativeLoad(String file);
@@ -151,8 +152,9 @@ public class KeyCharacterMap {
     private static native int nativeGetKeyboardType(int ptr);
     private static native KeyEvent[] nativeGetEvents(int ptr, int deviceId, char[] chars);
 
-    private KeyCharacterMap(int deviceId, int ptr) {
+    private KeyCharacterMap(int deviceId, int ptr, String kcm) {
         mDeviceId = deviceId;
+        mKcm = kcm;
         mPtr = ptr;
     }
 
@@ -162,6 +164,10 @@ public class KeyCharacterMap {
             nativeDispose(mPtr);
             mPtr = 0;
         }
+    }
+
+    private String kcm() {
+        return mKcm;
     }
 
     /**
@@ -176,21 +182,22 @@ public class KeyCharacterMap {
     public static KeyCharacterMap load(int deviceId) {
         synchronized (sInstances) {
             KeyCharacterMap map = sInstances.get(deviceId);
-            if (map == null) {
-                String kcm = null;
-                if (deviceId != VIRTUAL_KEYBOARD) {
-                    InputDevice device = InputDevice.getDevice(deviceId);
-                    if (device != null) {
-                        kcm = device.getKeyCharacterMapFile();
-                    }
+            String kcm = null;
+            if (deviceId != VIRTUAL_KEYBOARD) {
+                InputDevice device = InputDevice.getDevice(deviceId);
+                if (device != null) {
+                    kcm = device.getKeyCharacterMapFile();
                 }
-                if (kcm == null || kcm.length() == 0) {
-                    kcm = "/system/usr/keychars/Virtual.kcm";
-                }
-                int ptr = nativeLoad(kcm); // might throw
-                map = new KeyCharacterMap(deviceId, ptr);
-                sInstances.put(deviceId, map);
             }
+            if (kcm == null || kcm.length() == 0) {
+                kcm = "/system/usr/keychars/Virtual.kcm";
+            }
+            if (map != null && map.kcm().equals(kcm)) {
+                return map;
+            }
+            int ptr = nativeLoad(kcm); // might throw
+            map = new KeyCharacterMap(deviceId, ptr, kcm);
+            sInstances.put(deviceId, map);
             return map;
         }
     }
