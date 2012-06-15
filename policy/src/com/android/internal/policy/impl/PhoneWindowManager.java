@@ -1897,6 +1897,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     mHandler.postDelayed(mBackLongPress, ViewConfiguration.getGlobalActionKeyTimeout());
                 }
             }
+        } else if (keyCode == KeyEvent.KEYCODE_SWITCH_CHARSET) {
+            Intent intent = new Intent("hw.keycharmap.change");
+            mContext.sendBroadcast(intent);
+            return 0;
         }
 
         // Shortcuts are invoked through Search+key, so intercept those here

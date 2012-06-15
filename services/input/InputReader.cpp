@@ -39,6 +39,7 @@
 #include "InputReader.h"
 
 #include <cutils/log.h>
+#include <cutils/properties.h>
 #include <ui/Keyboard.h>
 #include <ui/VirtualKeyMap.h>
 
@@ -1893,6 +1894,32 @@ void KeyboardInputMapper::processKey(nsecs_t when, bool down, int32_t keyCode,
         // Rotate key codes according to orientation if needed.
         if (mParameters.orientationAware && mParameters.associatedDisplayId >= 0) {
             keyCode = rotateKeyCode(keyCode, mOrientation);
+        }
+
+        if (keyCode == AKEYCODE_SWITCH_CHARSET) {
+            char keypadSecondary[PROPERTY_VALUE_MAX];
+            property_get("persist.sys.keypad_sec", keypadSecondary, "none");
+            if (strcmp(keypadSecondary, "none") == 0) {
+                keyCode = AKEYCODE_MENU;
+            } else {
+                char keypadPrimary[PROPERTY_VALUE_MAX];
+                char keypadCurrentFileName[PROPERTY_VALUE_MAX];
+                char keypadSecFileName[PROPERTY_VALUE_MAX];
+                char keypadPriFileName[PROPERTY_VALUE_MAX];
+                property_get("persist.sys.keypad_pri", keypadPrimary, "");
+                property_get("sys.keypad_current", keypadCurrentFileName, "");
+                property_get("ro.sys.keypad_prefix", keypadSecFileName, "");
+                strcpy(keypadPriFileName, keypadSecFileName); //prefix
+                strcat(keypadPriFileName, keypadPrimary);
+                strcat(keypadSecFileName, keypadSecondary);
+                if (strcmp(keypadCurrentFileName,keypadPriFileName) == 0) {
+                    // change to secondary kcm filename
+                    property_set("sys.keypad_current", keypadSecFileName);
+                } else {
+                    // change to primary kcm filename
+                    property_set("sys.keypad_current", keypadPriFileName);
+                }
+            }
         }
 
         // Add key down.

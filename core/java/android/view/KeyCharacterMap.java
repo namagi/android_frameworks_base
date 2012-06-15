@@ -20,6 +20,7 @@ import android.text.method.MetaKeyKeyListener;
 import android.util.AndroidRuntimeException;
 import android.util.SparseIntArray;
 import android.os.RemoteException;
+import android.os.SystemProperties;
 import android.util.SparseArray;
 
 import java.lang.Character;
@@ -137,6 +138,7 @@ public class KeyCharacterMap {
     private static SparseArray<KeyCharacterMap> sInstances = new SparseArray<KeyCharacterMap>();
 
     private final int mDeviceId;
+    private final String mKcm;
     private int mPtr;
 
     private static native int nativeLoad(String file);
@@ -151,8 +153,9 @@ public class KeyCharacterMap {
     private static native int nativeGetKeyboardType(int ptr);
     private static native KeyEvent[] nativeGetEvents(int ptr, int deviceId, char[] chars);
 
-    private KeyCharacterMap(int deviceId, int ptr) {
+    private KeyCharacterMap(int deviceId, int ptr, String kcm) {
         mDeviceId = deviceId;
+        mKcm = kcm;
         mPtr = ptr;
     }
 
@@ -162,6 +165,10 @@ public class KeyCharacterMap {
             nativeDispose(mPtr);
             mPtr = 0;
         }
+    }
+
+    private String kcm() {
+        return mKcm;
     }
 
     /**
@@ -176,9 +183,20 @@ public class KeyCharacterMap {
     public static KeyCharacterMap load(int deviceId) {
         synchronized (sInstances) {
             KeyCharacterMap map = sInstances.get(deviceId);
+            String kcm = null;
+            if (deviceId == 0) {
+                String kcmCurrent = SystemProperties.get("sys.keypad_current", "0");
+                if (!kcmCurrent.equals("0")) {
+                    if (map != null && map.kcm().contains(kcmCurrent)) {
+                        return map;
+                    } else {
+                        map = null;
+                        kcm = "/system/usr/keychars/" + kcmCurrent + ".kcm";
+                    }
+                }
+            }
             if (map == null) {
-                String kcm = null;
-                if (deviceId != VIRTUAL_KEYBOARD) {
+                if (deviceId != VIRTUAL_KEYBOARD && kcm == null) {
                     InputDevice device = InputDevice.getDevice(deviceId);
                     if (device != null) {
                         kcm = device.getKeyCharacterMapFile();
@@ -188,7 +206,7 @@ public class KeyCharacterMap {
                     kcm = "/system/usr/keychars/Virtual.kcm";
                 }
                 int ptr = nativeLoad(kcm); // might throw
-                map = new KeyCharacterMap(deviceId, ptr);
+                map = new KeyCharacterMap(deviceId, ptr, kcm);
                 sInstances.put(deviceId, map);
             }
             return map;
