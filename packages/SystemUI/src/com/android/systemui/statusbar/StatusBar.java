@@ -66,8 +66,6 @@ public abstract class StatusBar extends SystemUI implements CommandQueue.Callbac
         // First set up our views and stuff.
         View sb = makeStatusBarView();
 
-        mStatusBarContainer.addView(sb);
-
         mShowNotificationCounts = Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.STATUS_BAR_NOTIF_COUNT, 0) == 1;
 
