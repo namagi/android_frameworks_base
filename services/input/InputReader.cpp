@@ -39,6 +39,7 @@
 #include "InputReader.h"
 
 #include <cutils/log.h>
+#include <cutils/properties.h>
 #include <ui/Keyboard.h>
 #include <ui/VirtualKeyMap.h>
 
@@ -97,10 +98,12 @@ static inline const char* toString(bool value) {
     return value ? "true" : "false";
 }
 
+static int mRotationMapStartIndex = 2;
+
 static int32_t rotateValueUsingRotationMap(int32_t value, int32_t orientation,
         const int32_t map[][4], size_t mapSize) {
     if (orientation != DISPLAY_ORIENTATION_0) {
-        for (size_t i = 0; i < mapSize; i++) {
+        for (size_t i = mRotationMapStartIndex; i < mapSize; i++) {
             if (value == map[i][0]) {
                 return map[i][orientation];
             }
@@ -112,6 +115,8 @@ static int32_t rotateValueUsingRotationMap(int32_t value, int32_t orientation,
 static const int32_t keyCodeRotationMap[][4] = {
         // key codes enumerated counter-clockwise with the original (unrotated) key first
         // no rotation,        90 degree rotation,  180 degree rotation, 270 degree rotation
+        { AKEYCODE_VOLUME_UP,   AKEYCODE_VOLUME_DOWN, AKEYCODE_VOLUME_DOWN, AKEYCODE_VOLUME_UP },
+        { AKEYCODE_VOLUME_DOWN, AKEYCODE_VOLUME_UP,   AKEYCODE_VOLUME_UP,   AKEYCODE_VOLUME_DOWN },
         { AKEYCODE_DPAD_DOWN,   AKEYCODE_DPAD_RIGHT,  AKEYCODE_DPAD_UP,     AKEYCODE_DPAD_LEFT },
         { AKEYCODE_DPAD_RIGHT,  AKEYCODE_DPAD_UP,     AKEYCODE_DPAD_LEFT,   AKEYCODE_DPAD_DOWN },
         { AKEYCODE_DPAD_UP,     AKEYCODE_DPAD_LEFT,   AKEYCODE_DPAD_DOWN,   AKEYCODE_DPAD_RIGHT },
@@ -243,6 +248,10 @@ InputReader::InputReader(const sp<EventHubInterface>& eventHub,
 
     { // acquire lock
         AutoMutex _l(mLock);
+
+        char propValue[PROPERTY_VALUE_MAX];
+        property_get("persist.sys.volbtn_orient_swap", propValue, "0");
+        mRotationMapStartIndex = atoi(propValue) == 1 ? 0 : 2;
 
         refreshConfigurationLocked(0);
         updateGlobalMetaStateLocked();
@@ -1895,6 +1904,32 @@ void KeyboardInputMapper::processKey(nsecs_t when, bool down, int32_t keyCode,
             keyCode = rotateKeyCode(keyCode, mOrientation);
         }
 
+        if (keyCode == AKEYCODE_SWITCH_CHARSET) {
+            char keypadSecondary[PROPERTY_VALUE_MAX];
+            property_get("persist.sys.keypad_sec", keypadSecondary, "none");
+            if (strcmp(keypadSecondary, "none") == 0) {
+                keyCode = AKEYCODE_MENU;
+            } else {
+                char keypadPrimary[PROPERTY_VALUE_MAX];
+                char keypadCurrentFileName[PROPERTY_VALUE_MAX];
+                char keypadSecFileName[PROPERTY_VALUE_MAX];
+                char keypadPriFileName[PROPERTY_VALUE_MAX];
+                property_get("persist.sys.keypad_pri", keypadPrimary, "");
+                property_get("sys.keypad_current", keypadCurrentFileName, "");
+                property_get("ro.sys.keypad_prefix", keypadSecFileName, "");
+                strcpy(keypadPriFileName, keypadSecFileName); //prefix
+                strcat(keypadPriFileName, keypadPrimary);
+                strcat(keypadSecFileName, keypadSecondary);
+                if (strcmp(keypadCurrentFileName,keypadPriFileName) == 0) {
+                    // change to secondary kcm filename
+                    property_set("sys.keypad_current", keypadSecFileName);
+                } else {
+                    // change to primary kcm filename
+                    property_set("sys.keypad_current", keypadPriFileName);
+                }
+            }
+        }
+
         // Add key down.
         ssize_t keyDownIndex = findKeyDown(scanCode);
         if (keyDownIndex >= 0) {
@@ -2528,7 +2563,8 @@ void TouchInputMapper::configure(nsecs_t when,
     bool resetNeeded = false;
     if (!changes || (changes & (InputReaderConfiguration::CHANGE_DISPLAY_INFO
             | InputReaderConfiguration::CHANGE_POINTER_GESTURE_ENABLEMENT
-            | InputReaderConfiguration::CHANGE_SHOW_TOUCHES))) {
+            | InputReaderConfiguration::CHANGE_SHOW_TOUCHES
+            | InputReaderConfiguration::CHANGE_STYLUS_ICON_ENABLED))) {
         // Configure device sources, surface dimensions, orientation and
         // scaling factors.
         configureSurface(when, &resetNeeded);
@@ -2908,7 +2944,7 @@ void TouchInputMapper::configureSurface(nsecs_t when, bool* outResetNeeded) {
             mOrientedRanges.distance.min =
                     mRawPointerAxes.distance.minValue * mDistanceScale;
             mOrientedRanges.distance.max =
-                    mRawPointerAxes.distance.minValue * mDistanceScale;
+                    mRawPointerAxes.distance.maxValue * mDistanceScale;
             mOrientedRanges.distance.flat = 0;
             mOrientedRanges.distance.fuzz =
                     mRawPointerAxes.distance.fuzz * mDistanceScale;
@@ -4019,7 +4055,7 @@ void TouchInputMapper::dispatchPointerGestures(nsecs_t when, uint32_t policyFlag
                 && (mPointerGesture.lastGestureMode == PointerGesture::SWIPE
                         || mPointerGesture.lastGestureMode == PointerGesture::FREEFORM)) {
             // Remind the user of where the pointer is after finishing a gesture with spots.
-            mPointerController->unfade(PointerControllerInterface::TRANSITION_GRADUAL);
+            unfadePointer(PointerControllerInterface::TRANSITION_GRADUAL);
         }
         break;
     case PointerGesture::TAP:
@@ -4029,7 +4065,7 @@ void TouchInputMapper::dispatchPointerGestures(nsecs_t when, uint32_t policyFlag
     case PointerGesture::PRESS:
         // Unfade the pointer when the current gesture manipulates the
         // area directly under the pointer.
-        mPointerController->unfade(PointerControllerInterface::TRANSITION_IMMEDIATE);
+        unfadePointer(PointerControllerInterface::TRANSITION_IMMEDIATE);
         break;
     case PointerGesture::SWIPE:
     case PointerGesture::FREEFORM:
@@ -4038,7 +4074,7 @@ void TouchInputMapper::dispatchPointerGestures(nsecs_t when, uint32_t policyFlag
         if (mParameters.gestureMode == Parameters::GESTURE_MODE_SPOTS) {
             mPointerController->fade(PointerControllerInterface::TRANSITION_GRADUAL);
         } else {
-            mPointerController->unfade(PointerControllerInterface::TRANSITION_IMMEDIATE);
+            unfadePointer(PointerControllerInterface::TRANSITION_IMMEDIATE);
         }
         break;
     }
@@ -5066,7 +5102,7 @@ void TouchInputMapper::dispatchPointerSimple(nsecs_t when, uint32_t policyFlags,
             mPointerController->setPresentation(PointerControllerInterface::PRESENTATION_POINTER);
             mPointerController->clearSpots();
             mPointerController->setButtonState(mCurrentButtonState);
-            mPointerController->unfade(PointerControllerInterface::TRANSITION_IMMEDIATE);
+            unfadePointer(PointerControllerInterface::TRANSITION_IMMEDIATE);
         } else if (!down && !hovering && (mPointerSimple.down || mPointerSimple.hovering)) {
             mPointerController->fade(PointerControllerInterface::TRANSITION_GRADUAL);
         }
@@ -5251,6 +5287,13 @@ bool TouchInputMapper::updateMovedPointers(const PointerProperties* inProperties
 void TouchInputMapper::fadePointer() {
     if (mPointerController != NULL) {
         mPointerController->fade(PointerControllerInterface::TRANSITION_GRADUAL);
+    }
+}
+
+void TouchInputMapper::unfadePointer(PointerControllerInterface::Transition transition) {
+    if (mPointerController != NULL &&
+            !(mPointerUsage == POINTER_USAGE_STYLUS && !mConfig.stylusIconEnabled)) {
+        mPointerController->unfade(transition);
     }
 }
 

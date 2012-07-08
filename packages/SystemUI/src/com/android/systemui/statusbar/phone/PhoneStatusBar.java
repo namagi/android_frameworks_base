@@ -123,9 +123,14 @@ public class PhoneStatusBar extends StatusBar {
 
     private static final boolean CLOSE_PANEL_WHEN_EMPTIED = true;
 
+    private static final float BRIGHTNESS_CONTROL_PADDING = 0.15f;
+
     private boolean mShowClock;
     private boolean mBrightnessControl;
     private boolean mAutoBrightness;
+
+    // brightness panel
+    private BrightnessPanel mBrightnessPanel = null;
 
     // fling gesture tuning parameters, scaled to display density
     private float mSelfExpandVelocityPx; // classic value: 2000px/s
@@ -383,7 +388,6 @@ public class PhoneStatusBar extends StatusBar {
 
 
         mPowerWidget = (PowerWidget)expanded.findViewById(R.id.exp_power_stat);
-        mPowerWidget.setupSettingsObserver(mHandler);
         mPowerWidget.setGlobalButtonOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         if(Settings.System.getInt(mContext.getContentResolver(),
@@ -588,7 +592,7 @@ public class PhoneStatusBar extends StatusBar {
         StatusBarIconView view = new StatusBarIconView(mContext, slot, null);
         view.set(icon);
         mStatusIcons.addView(view, viewIndex, new LinearLayout.LayoutParams(mIconSize, mIconSize));
-	mPowerWidget.updateWidget();
+	mPowerWidget.updateAllButtons();
     }
 
     public void updateIcon(String slot, int index, int viewIndex,
@@ -1572,7 +1576,16 @@ public class PhoneStatusBar extends StatusBar {
                         if (yVel < 50.0f) {
                             if (mLinger > 20) {
                                 float x = (float) event.getRawX();
-                                int newBrightness = (int) Math.round(((x / mScreenWidth) * android.os.Power.BRIGHTNESS_ON));
+                                float raw = (x / mScreenWidth);
+
+                                // Add a padding to the brightness control on both sides to make it easier
+                                // to reach min/max brightness
+                                float padded = Math.min(1.0f - BRIGHTNESS_CONTROL_PADDING, Math.max(BRIGHTNESS_CONTROL_PADDING, raw));
+                                float value = (padded - BRIGHTNESS_CONTROL_PADDING) / (1 - (2.0f * BRIGHTNESS_CONTROL_PADDING));
+
+                                int newBrightness = mMinBrightness + (int) Math.round(value *
+                                        (android.os.Power.BRIGHTNESS_ON - mMinBrightness));
+
                                 newBrightness = Math.min(newBrightness, android.os.Power.BRIGHTNESS_ON);
                                 newBrightness = Math.max(newBrightness, mMinBrightness);
                                 try {
@@ -1581,6 +1594,11 @@ public class PhoneStatusBar extends StatusBar {
                                         power.setBacklightBrightness(newBrightness);
                                         Settings.System.putInt(mContext.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS,
                                                 newBrightness);
+
+                                        if (mBrightnessPanel == null)
+                                            mBrightnessPanel = new BrightnessPanel(mContext);
+                                        mBrightnessPanel.postBrightnessChanged(newBrightness, android.os.Power.BRIGHTNESS_ON);
+
                                     }
                                 } catch (RemoteException e) {
                                     Slog.w(TAG, "Setting Brightness failed: " + e);
@@ -1588,8 +1606,6 @@ public class PhoneStatusBar extends StatusBar {
                             } else {
                                 mLinger++;
                             }
-                        } else {
-                            mLinger = 0;
                         }
                     }
                 } else {
@@ -1598,6 +1614,7 @@ public class PhoneStatusBar extends StatusBar {
                 }
             } else if (action == MotionEvent.ACTION_UP
                     || action == MotionEvent.ACTION_CANCEL) {
+                mLinger = 0;
                 mVelocityTracker.computeCurrentVelocity(1000);
 
                 float yVel = mVelocityTracker.getYVelocity();

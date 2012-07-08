@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#define LOG_NDEBUG 0
+//#define LOG_NDEBUG 0
 #define LOG_TAG "LPAPlayer"
 #include <utils/Log.h>
 #include <utils/threads.h>
@@ -45,6 +45,8 @@
 namespace android {
 int LPAPlayer::objectsAlive = 0;
 
+#define BT_A2DP_BUFFER_SIZE 65536
+
 LPAPlayer::LPAPlayer(
                     const sp<MediaPlayerBase::AudioSink> &audioSink, bool &initCheck,
                     AwesomePlayer *observer)
@@ -68,6 +70,7 @@ mObserver(observer),
 AudioPlayer(audioSink,observer) {
     LOGV("LPAPlayer::LPAPlayer() ctor");
     a2dpDisconnectPause = false;
+    a2dpResumeAfterReConnect = false;
     mSeeked = false;
     objectsAlive++;
     timeStarted = 0;
@@ -505,6 +508,7 @@ void LPAPlayer::resume() {
             mReachedEOS = false;
             mSeekTimeUs = timePlayed;
             a2dpDisconnectPause = false;
+            a2dpResumeAfterReConnect = true;
             mAudioSink->start();
             pthread_cond_signal(&decoder_cv);
             pthread_cond_signal(&a2dp_cv);
@@ -774,9 +778,22 @@ void LPAPlayer::decoderThreadEntry() {
         //Queue up the buffers for writing either for A2DP or LPA Driver
         else {
             struct msm_audio_aio_buf aio_buf_local;
+            if(bIsA2DPEnabled && isPaused){
+                pthread_mutex_lock(&mem_response_mutex);
+                buf.bytesToWrite = 0;
+                memBuffersResponseQueue.push_back(buf);
+                pthread_mutex_unlock(&mem_response_mutex);
+                continue;
+            }
+            int numOfBytes = 0;
 
-            LOGV("Calling fillBuffer for size %d",MEM_BUFFER_SIZE);
-            buf.bytesToWrite = fillBuffer(buf.localBuf, MEM_BUFFER_SIZE);
+            if (bIsA2DPEnabled)
+                numOfBytes = BT_A2DP_BUFFER_SIZE;
+            else
+                numOfBytes = MEM_BUFFER_SIZE;
+
+            LOGV("Calling fillBuffer for size %d",numOfBytes);
+            buf.bytesToWrite = fillBuffer(buf.localBuf, numOfBytes);
             LOGV("fillBuffer returned size %d",buf.bytesToWrite);
 
             /* TODO: Check if we have to notify the app if an error occurs */
@@ -1134,6 +1151,19 @@ void LPAPlayer::A2DPThreadEntry() {
                     //Seeked: break out of loop, flush old buffers and write new buffers
                     LOGV("@_@bytes To write1:%d",bytesToWrite);
                 }
+                /* Incase of A2DP disconnect and connects back flushing all the buffers
+                   which are decoded by fillbuffer and not sent to A2DP */
+                if( a2dpResumeAfterReConnect == true )
+                {
+                    a2dpResumeAfterReConnect = false;
+                    while (!memBuffersResponseQueue.empty()) {
+                        List<BuffersAllocated>::iterator it = memBuffersResponseQueue.begin();
+                        BuffersAllocated buf = *it;
+                        memBuffersRequestQueue.push_back(buf);
+                        memBuffersResponseQueue.erase(it);
+                    }
+                    break;
+                }
                 if (mSeeked) {
                     LOGV("Seeking A2DP Playback");
                     break;
@@ -1489,7 +1519,14 @@ realTimeOffset = 0;
 
 return mPositionTimeMediaUs + realTimeOffset;
 */
-    LOGV("getMediaTimeUs() isPaused %d timeStarted %d timePlayed %d", isPaused, timeStarted, timePlayed);
+    /* When A2DP connects in the middile timePlayed will be updated to the
+       number of buffer played from zero which will be non-zero value
+       incase if user does not perform any seek operation timePlayed will be
+       willbe non-zero and which will effect the seekbar after playback
+       to resolve this sending zero when the EOS reached and A2DP enable */
+    if( isPaused && bIsA2DPEnabled && mReachedEOS )
+        return 0;
+    LOGV("getMediaTimeUs() isPaused %d timeStarted %lld timePlayed %lld", isPaused, timeStarted, timePlayed);
     if (isPaused || timeStarted == 0) {
         return timePlayed;
     } else {

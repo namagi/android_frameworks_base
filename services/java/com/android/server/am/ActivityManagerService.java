@@ -1760,7 +1760,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 if (cr.binding != null && cr.binding.service != null
                         && cr.binding.service.app != null
                         && cr.binding.service.app.lruSeq != mLruSeq) {
-                    updateLruProcessInternalLocked(cr.binding.service.app, oomAdj,
+                    updateLruProcessInternalLocked(cr.binding.service.app, false,
                             updateActivityTime, i+1);
                 }
             }
@@ -1768,7 +1768,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         if (app.conProviders.size() > 0) {
             for (ContentProviderRecord cpr : app.conProviders.keySet()) {
                 if (cpr.proc != null && cpr.proc.lruSeq != mLruSeq) {
-                    updateLruProcessInternalLocked(cpr.proc, oomAdj,
+                    updateLruProcessInternalLocked(cpr.proc, false,
                             updateActivityTime, i+1);
                 }
             }
@@ -2993,7 +2993,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         }
     }
 
-    final void logAppTooSlow(ProcessRecord app, long startTime, String msg) {
+    final void logAppTooSlow(int pid, long startTime, String msg) {
         if (IS_USER_BUILD) {
             return;
         }
@@ -3026,7 +3026,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 sb.append(msg);
                 FileOutputStream fos = new FileOutputStream(tracesFile);
                 fos.write(sb.toString().getBytes());
-                if (app == null) {
+                if (pid <= 0) {
                     fos.write("\n*** No application process!".getBytes());
                 }
                 fos.close();
@@ -3036,9 +3036,9 @@ public final class ActivityManagerService extends ActivityManagerNative
                 return;
             }
 
-            if (app != null) {
+            if (pid > 0) {
                 ArrayList<Integer> firstPids = new ArrayList<Integer>();
-                firstPids.add(app.pid);
+                firstPids.add(pid);
                 dumpStackTraces(tracesPath, firstPids, null, null);
             }
 
@@ -5967,7 +5967,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                     // pending on the process even though we managed to update its
                     // adj level.  Not sure what to do about this, but at least
                     // the race is now smaller.
-                    if (!success) {
+                    if (!success || Process.isZombie(cpr.proc.pid)) {
                         // Uh oh...  it looks like the provider's process
                         // has been killed on us.  We need to wait for a new
                         // process to be started, and make sure its death
@@ -5976,7 +5976,9 @@ public final class ActivityManagerService extends ActivityManagerNative
                                 "Existing provider " + cpr.name.flattenToShortString()
                                 + " is crashing; detaching " + r);
                         boolean lastRef = decProviderCount(r, cpr);
-                        appDiedLocked(cpr.proc, cpr.proc.pid, cpr.proc.thread);
+                        if (!success) {
+                            appDiedLocked(cpr.proc, cpr.proc.pid, cpr.proc.thread);
+                        }
                         if (!lastRef) {
                             // This wasn't the last ref our process had on
                             // the provider...  we have now been killed, bail.
@@ -14029,6 +14031,17 @@ public final class ActivityManagerService extends ActivityManagerNative
                     }
                 }
             }
+        }
+
+        /* try to keep the recently removed provider a bit longer as it may
+           be added again very soon - to lower the risk of a race where a signal
+           could be pending on the provider process even though its adj level
+           has been updated in the meantime.
+           (see the comments in getContentProviderImpl) */
+        if (app.pubProviders.size() != 0 && adj > ProcessList.PERCEPTIBLE_APP_ADJ
+                && app.setAdj == ProcessList.FOREGROUND_APP_ADJ) {
+            app.adjType = "ex-provider";
+            adj = ProcessList.PERCEPTIBLE_APP_ADJ;
         }
 
         app.curRawAdj = adj;

@@ -55,7 +55,7 @@ class ProcessList {
     // This is a process holding the home application -- we want to try
     // avoiding killing it, even if it would normally be in the background,
     // because the user interacts with it so much.
-    static final int HOME_APP_ADJ = 3;
+    static final int HOME_APP_ADJ = 2;
 
     // This is a process holding an application service -- killing it will not
     // have much of an impact as far as the user is concerned.
@@ -120,7 +120,7 @@ class ProcessList {
     // These are the low-end OOM level limits.  This is appropriate for an
     // HVGA or smaller phone with less than 512MB.  Values are in KB.
     private final long[] mOomMinFreeLow = new long[] {
-            8192, 12288, 16384,
+            6144, 12288, 16384,
             24576, 28672, 32768
     };
     // These are the high-end OOM level limits.  This is appropriate for a

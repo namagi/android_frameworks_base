@@ -201,6 +201,8 @@ public class WifiStateMachine extends StateMachine {
     private static final int EVENTLOG_WIFI_EVENT_HANDLED        = 50022;
     private static final int EVENTLOG_SUPPLICANT_STATE_CHANGED  = 50023;
 
+    private static final int FORCE_STOPPED_STATE               = 999999;
+
     /* The base for wifi message types */
     static final int BASE = Protocol.BASE_WIFI;
     /* Load the driver */
@@ -1898,7 +1900,8 @@ public class WifiStateMachine extends StateMachine {
                     deferMessage(message);
                     break;
                 default:
-                    loge("Error! unhandled message" + (message.what - BASE));
+                    loge("Error! unhandled message 0x" + Integer.toHexString(message.what) +
+                            " - " + (message.what - BASE));
                     break;
             }
             return HANDLED;
@@ -2043,10 +2046,10 @@ public class WifiStateMachine extends StateMachine {
                         loge("Failed to reload STA firmware " + e);
                         // continue
                     }
-                   try {
-                       //A runtime crash can leave the interface up and
-                       //this affects connectivity when supplicant starts up.
-                       //Ensure interface is down before a supplicant start.
+                    try {
+                        //A runtime crash can leave the interface up and
+                        //this affects connectivity when supplicant starts up.
+                        //Ensure interface is down before a supplicant start.
                         mNwService.setInterfaceDown(mInterfaceName);
                         //Set privacy extensions
                         mNwService.setInterfaceIpv6PrivacyExtensions(mInterfaceName, true);
@@ -2668,17 +2671,57 @@ public class WifiStateMachine extends StateMachine {
         public void enter() {
             if (DBG) log(getName() + "\n");
             EventLog.writeEvent(EVENTLOG_WIFI_STATE_CHANGED, getName());
+            sendMessageDelayed(FORCE_STOPPED_STATE, 2000);
         }
+
+        /* If the supplicant doesnt report the interface down event,
+         * The wifi stay in stopping state and wifi never resume...
+         * this add another gate to exit this Stopping State...
+         */
+        private void forceTransitionToStopped(SupplicantState state) {
+
+            loge("Supplicant did not report INTERFACE_DISABLED, forcing stopped state ! was " + state);
+
+            setWifiEnabled(false);
+
+            try {
+                mNwService.setInterfaceDown(mInterfaceName);
+            }
+            catch (Exception e) {}
+
+            setWifiState(WIFI_STATE_DISABLED);
+            exit();
+        }
+
         @Override
         public boolean processMessage(Message message) {
             if (DBG) log(getName() + message.toString() + "\n");
             switch(message.what) {
+                case FORCE_STOPPED_STATE:
+                    forceTransitionToStopped(SupplicantState.INTERFACE_DISABLED);
+                    break;
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                     SupplicantState state = handleSupplicantStateChange(message);
+                    if (DBG) log("Supplicant state is "+state);
                     if (state == SupplicantState.INTERFACE_DISABLED) {
+                        log("Received INTERFACE_DISABLED message :)");
                         transitionTo(mDriverStoppedState);
                     }
+                    else if (state == SupplicantState.DISCONNECTED) {
+                        forceTransitionToStopped(state);
+                    }
                     break;
+
+                case CMD_ENABLE_ALL_NETWORKS:
+                    loge("ENABLE_ALL_NETWORKS command received in stopping state, restarting wifi :-(");
+
+                    //WifiNative.killSupplicant();
+
+                    // send DRIVER_HUNG_EVENT to mDefaultState to disable/enable the wifi...
+                    transitionTo(mDefaultState);
+                    sendMessage(WifiMonitor.DRIVER_HUNG_EVENT);
+                    return HANDLED;
+
                     /* Queue driver commands */
                 case CMD_START_DRIVER:
                 case CMD_STOP_DRIVER:
@@ -2695,6 +2738,8 @@ public class WifiStateMachine extends StateMachine {
                     deferMessage(message);
                     break;
                 default:
+                    log(getName() + " message not handled 0x" + Integer.toHexString(message.what) +
+                         " - " + (message.what - BASE) + "\n");
                     return NOT_HANDLED;
             }
             EventLog.writeEvent(EVENTLOG_WIFI_EVENT_HANDLED, message.what);
