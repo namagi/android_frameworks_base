@@ -131,7 +131,7 @@ OpenGLRenderer::~OpenGLRenderer() {
 ///////////////////////////////////////////////////////////////////////////////
 
 void OpenGLRenderer::setViewport(int width, int height) {
-    glDisable(GL_DITHER);
+//    glDisable(GL_DITHER);
     glViewport(0, 0, width, height);
     mOrthoMatrix.loadOrtho(0, width, height, 0, -1, 1);
 
@@ -220,7 +220,7 @@ void OpenGLRenderer::resume() {
     glEnable(GL_SCISSOR_TEST);
     dirtyClip();
 
-    glDisable(GL_DITHER);
+//    glDisable(GL_DITHER);
 
     glBindFramebuffer(GL_FRAMEBUFFER, snapshot->fbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
