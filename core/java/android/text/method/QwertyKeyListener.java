@@ -789,8 +789,9 @@ public class QwertyKeyListener extends BaseKeyListener {
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
-    private static SparseArray<String> PICKER_SETS =
-                        new SparseArray<String>();
+    private static SparseArray<Integer> SYM_PICKER_RES_ID =
+                        new SparseArray<Integer>();
+
     static {
         PICKER_SETS.put('A', "\u00C0\u00C1\u00C2\u00C4\u00C6\u00C3\u00C5\u0104\u0100");
         PICKER_SETS.put('C', "\u00C7\u0106\u010C");
@@ -857,10 +858,13 @@ public class QwertyKeyListener extends BaseKeyListener {
 
     private boolean showCharacterPicker(View view, Editable content, char c,
                                         boolean insert, int count) {
-        String set = PICKER_SETS.get(c);
-        if (set == null) {
+        Integer resId = SYM_PICKER_RES_ID.get(c);
+
+        if (resId == null) {
             return false;
         }
+
+        String set = view.getContext().getString(resId);
 
         if (count == 1) {
             if (set.length() == 1) {
