@@ -302,9 +302,6 @@ static jobject doDecode(JNIEnv* env, SkStream* stream, jobject padding,
         env->ReleasePrimitiveArrayCritical(ninePatchChunk, array, 0);
     }
 
-    // detach bitmap from its autodeleter, since we want to own it now
-    adb.detach();
-
     if (willScale) {
         // This is weird so let me explain: we could use the scale parameter
         // directly, but for historical reasons this is how the corresponding
@@ -353,6 +350,9 @@ static jobject doDecode(JNIEnv* env, SkStream* stream, jobject padding,
         // promise we will never change our pixels (great for sharing and pictures)
         pr->setImmutable();
     }
+
+    // detach bitmap from its autodeleter, since we want to own it now
+    adb.detach();
 
     if (javaBitmap != NULL) {
         // If a java bitmap was passed in for reuse, pass it back
