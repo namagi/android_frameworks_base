@@ -343,11 +343,9 @@ public class LegacyUsbDeviceManager extends UsbDeviceManager {
                 }
 
                 // register observer to listen for settings changes
-                if (!mHasUsbService) {
-                    mContentResolver.registerContentObserver(
+                mContentResolver.registerContentObserver(
                         Settings.Secure.getUriFor(Settings.Secure.ADB_ENABLED),
                         false, new AdbSettingsObserver());
-                }
 
                 // Watch for USB configuration changes
                 if (mHasUsbService) {
