@@ -3738,31 +3738,24 @@ public final class ActivityThread {
 
     /**
      * hwui.use.blacklist allows to disable the hardware acceleration
-     * to specified applications processes, if files (process names)
-     * are present in /data/local/hwui.deny/
+     * of processes belonging to specified application packages,
+     * if files (package names) are present in /data/local/hwui.deny/
      */
-    private boolean hwuiForbidden(String processName) {
+    private boolean hwuiForbidden(String packageName) {
 
         boolean useBL = SystemProperties.getBoolean("hwui.use.blacklist", false);
 
         // Default is allowed
         boolean blacklisted = false;
 
-        if (!useBL || TextUtils.isEmpty(processName))
+        if (!useBL || TextUtils.isEmpty(packageName))
             return blacklisted;
 
-        File hwuiConfig = new File("/data/local/hwui.deny/" + processName);
+        File hwuiConfig = new File("/data/local/hwui.deny/" + packageName);
         if (hwuiConfig.exists()) {
             blacklisted = true;
         }
-
         hwuiConfig = null;
-
-        // Keep the logs to show process names with "adb logcat | grep listed"
-        if (!blacklisted)
-            Slog.v(TAG, processName + " white listed for hwui");
-        else
-            Slog.d(TAG, processName + " black listed for hwui");
 
         return blacklisted;
     }
@@ -3789,8 +3782,11 @@ public final class ActivityThread {
             if (!ActivityManager.isHighEndGfx(display)) {
                 HardwareRenderer.disable(false);
             }
-        } else if (hwuiForbidden(data.processName)) {
+        } else if (hwuiForbidden(data.appInfo.packageName)) {
             HardwareRenderer.disable(false);
+            Slog.d(TAG, data.processName + " black listed for hwui (package " + data.appInfo.packageName + ")");;
+        } else {
+            Slog.d(TAG, data.processName + " NOT black listed for hwui (package " + data.appInfo.packageName + ")");
         }
         
         if (mProfiler.profileFd != null) {
