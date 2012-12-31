@@ -2824,9 +2824,14 @@ public class PowerManagerService extends IPowerManager.Stub
                 int buttonValue = getAutoBrightnessValue(value, mLastButtonValue,
                         (mCustomLightEnabled ? mCustomLightLevels : mAutoBrightnessLevels),
                         (mCustomLightEnabled ? mCustomButtonValues : mButtonBacklightValues));
-                int keyboardValue = getAutoBrightnessValue(value, mLastKeyboardValue,
+                int keyboardValue;
+                if (mKeyboardVisible) {
+                    keyboardValue = getAutoBrightnessValue(value, mLastKeyboardValue,
                             (mCustomLightEnabled ? mCustomLightLevels : mAutoBrightnessLevels),
                             (mCustomLightEnabled ? mCustomKeyboardValues : mKeyboardBacklightValues));
+                } else {
+                    keyboardValue = 0;
+                }
 
                 mLightSensorScreenBrightness = lcdValue;
                 mLightSensorButtonBrightness = buttonValue;
