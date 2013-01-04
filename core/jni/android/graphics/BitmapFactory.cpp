@@ -17,6 +17,7 @@
 #include <android_runtime/AndroidRuntime.h>
 #include <cutils/properties.h>
 #include <utils/Asset.h>
+#include <utils/Log.h>
 #include <utils/ResourceTypes.h>
 #include <netinet/in.h>
 #include <sys/mman.h>
@@ -34,6 +35,8 @@ jfieldID gOptions_widthFieldID;
 jfieldID gOptions_heightFieldID;
 jfieldID gOptions_mimeFieldID;
 jfieldID gOptions_mCancelID;
+jfieldID gOptions_densityFieldID;
+jfieldID gOptions_targetDensityFieldID;
 jfieldID gOptions_bitmapFieldID;
 jfieldID gBitmap_nativeBitmapFieldID;
 
@@ -260,6 +263,13 @@ static jobject doDecode(JNIEnv* env, SkStream* stream, jobject padding,
         return nullObjectReturn("decoder->decode returned false");
     }
 
+    if (willScale && !scale) {
+        int targetDensity = env->GetIntField(options, gOptions_targetDensityFieldID);
+        int density = env->GetIntField(options, gOptions_densityFieldID);
+        scale = targetDensity / float(density);
+        LOGW("do_decode: WTF, scale became zero, restoring it to %f (targetDesinty %d / density %d)\n", scale, targetDensity, density);
+    }
+
     int scaledWidth = decoded->width();
     int scaledHeight = decoded->height();
 
@@ -324,7 +334,9 @@ static jobject doDecode(JNIEnv* env, SkStream* stream, jobject padding,
 
         bitmap->setConfig(config, scaledWidth, scaledHeight);
         bitmap->setIsOpaque(decoded->isOpaque());
-        bitmap->allocPixels(&javaAllocator, NULL);
+        if (!bitmap->allocPixels(&javaAllocator, NULL)){
+            return nullObjectReturn("allocation failed for scaled bitmap");
+        }
         bitmap->eraseColor(0);
 
         SkPaint paint;
@@ -612,6 +624,8 @@ int register_android_graphics_BitmapFactory(JNIEnv* env) {
     gOptions_heightFieldID = getFieldIDCheck(env, options_class, "outHeight", "I");
     gOptions_mimeFieldID = getFieldIDCheck(env, options_class, "outMimeType", "Ljava/lang/String;");
     gOptions_mCancelID = getFieldIDCheck(env, options_class, "mCancel", "Z");
+    gOptions_densityFieldID = getFieldIDCheck(env, options_class, "inDensity", "I");
+    gOptions_targetDensityFieldID = getFieldIDCheck(env, options_class, "inTargetDensity", "I");
 
     jclass bitmap_class = env->FindClass("android/graphics/Bitmap");
     SkASSERT(bitmap_class);
