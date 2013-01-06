@@ -686,7 +686,7 @@ class ContextImpl extends Context {
                 } catch (IOException e) {
                 }
                 if (!mExternalFilesDir.mkdirs()) {
-                    Log.w(TAG, "Unable to create external files directory");
+                    Log.w(TAG, "Unable to create external files directory " + mExternalFilesDir);
                     return null;
                 }
             }
