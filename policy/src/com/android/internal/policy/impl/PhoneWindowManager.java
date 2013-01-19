@@ -35,6 +35,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -794,6 +795,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     Runnable mBackLongPress = new Runnable() {
         public void run() {
             try {
+                final Intent intent2 = new Intent(Intent.ACTION_MAIN);
+                intent2.addCategory(Intent.CATEGORY_HOME);
+                final ResolveInfo resolveInfo = mContext.getPackageManager().resolveActivity(intent2, 0);
+                String currentHomePackage = resolveInfo.activityInfo.packageName;
+
                 performHapticFeedbackLw(null, HapticFeedbackConstants.LONG_PRESS, false);
                 IActivityManager am = ActivityManagerNative.getDefault();
                 List<RunningAppProcessInfo> apps = am.getRunningAppProcesses();
@@ -803,12 +809,19 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     // root, phone, etc.)
                     if (uid >= Process.FIRST_APPLICATION_UID && uid <= Process.LAST_APPLICATION_UID
                             && appInfo.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                        Toast.makeText(mContext, R.string.app_killed_message, Toast.LENGTH_SHORT).show();
                         // Kill the entire pid
                         if (appInfo.pkgList != null && (apps.size() > 0)) {
-                            am.forceStopPackage(appInfo.pkgList[0]);
+                            for (String pkg : appInfo.pkgList)
+                            {
+                                if (!pkg.equals("com.android.systemui") && !pkg.equals(currentHomePackage))
+                                {
+                                    am.forceStopPackage(appInfo.pkgList[0]);
+                                    Toast.makeText(mContext, R.string.app_killed_message, Toast.LENGTH_SHORT).show();
+                                }
+                            }
                         } else {
                             Process.killProcess(appInfo.pid);
+                            Toast.makeText(mContext, R.string.app_killed_message, Toast.LENGTH_SHORT).show();
                         }
                         break;
                     }
