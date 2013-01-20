@@ -7477,6 +7477,14 @@ public final class ContactsContract {
                 Uri.withAppendedPath(Data.CONTENT_URI, "usagefeedback");
 
         /**
+         * The content:// style URI for deleting all usage information.
+         * Must be used with {@link ContentResolver#delete(Uri, String, String[])}.
+         * The {@code where} and {@code selectionArgs} parameters are ignored.
+         */
+        public static final Uri DELETE_USAGE_URI =
+                Uri.withAppendedPath(Contacts.CONTENT_URI, "delete_usage");
+
+        /**
          * <p>
          * Name for query parameter specifying the type of data usage.
          * </p>
