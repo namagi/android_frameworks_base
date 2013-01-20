@@ -46,9 +46,16 @@
         <item name="android:textStyle">normal</item>
         <item name="android:textColor">@android:color/holo_blue_light</item>
     </style>
-
-    <style name="TextAppearance.StatusBar.Clock" parent="@*android:style/TextAppearance.StatusBar.Icon">
+	
+	<style name="TextAppearance.StatusBar.Signal" parent="@*android:style/TextAppearance.StatusBar.Icon">
         <!-- Note: must be dp to fit in status bar -->
+        <item name="android:textSize">12dp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@android:color/holo_blue_light</item>
+    </style>
+    
+	<style name="TextAppearance.StatusBar.Clock" parent="@*android:style/TextAppearance.StatusBar.Icon">
+		<!-- Note: must be dp to fit in status bar -->
         <item name="android:textSize">16dp</item>
         <item name="android:textStyle">normal</item>
         <item name="android:textColor">@android:color/holo_blue_light</item>
@@ -60,13 +67,22 @@
         <item name="android:textColor">@android:color/holo_blue_light</item>
     </style>
 
-    <style name="TextAppearance.StatusBar.Signal" parent="@*android:style/TextAppearance.StatusBar.Icon">
-        <!-- Note: must be dp to fit in status bar -->
-        <item name="android:textSize">12dp</item>
+	<!-- onClick Clock & Date -->
+	<style name="TextAppearance.StatusBar.Expanded" parent="@*android:style/TextAppearance.StatusBar" />
+	
+	<style name="TextAppearance.StatusBar.Expanded.Clock">
+        <item name="android:textSize">30dp</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@android:color/holo_blue_light</item>
+        <item name="android:textColor">@color/clock_view_color</item>
     </style>
 
+    <style name="TextAppearance.StatusBar.Expanded.Date">
+        <item name="android:textSize">16dp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/date_view_color</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+    	
     <style name="Animation" />
 
     <style name="Animation.ShirtPocketPanel">
@@ -111,7 +127,7 @@
 
     <style name="StatusBarPanelSettingsRow">
         <item name="android:paddingRight">16dp</item>
-        <item name="android:layout_height">64dp</item>
+        <item name="android:layout_height">48dp</item>
         <item name="android:layout_width">match_parent</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:background">?android:attr/listChoiceBackgroundIndicator</item>
