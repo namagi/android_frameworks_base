@@ -2580,6 +2580,12 @@ public final class Settings {
         public static final String LOCKSCREEN_CALENDAR_REMINDERS_ONLY = "lockscreen_calendar_reminders_only";
 
         /**
+         * Whether the lockscreen vibrate should be enabled.
+         * @hide
+         */
+        public static final String LOCKSCREEN_VIBRATE_ENABLED = "lockscreen.vibrate_enabled";
+
+        /**
          * Show the pending notification counts as overlays on the status bar
          * @hide
          */
@@ -2665,6 +2671,7 @@ public final class Settings {
             QUIET_HOURS_STILL,
             QUIET_HOURS_DIM,
             KEYLAYOUT_OVERRIDES,
+            LOCKSCREEN_VIBRATE_ENABLED,
         };
 
         // Settings moved to Settings.Secure

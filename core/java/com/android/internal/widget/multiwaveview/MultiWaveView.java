@@ -22,6 +22,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -29,6 +30,7 @@ import android.graphics.Canvas;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -255,7 +257,9 @@ public class MultiWaveView extends View {
         }
 
         a.recycle();
-        setVibrateEnabled(mVibrationDuration > 0);
+        final ContentResolver resolver = context.getContentResolver();
+        boolean vibrateEnabled = Settings.System.getInt(resolver,Settings.System.LOCKSCREEN_VIBRATE_ENABLED, 1) == 1;
+        setVibrateEnabled(vibrateEnabled ? mVibrationDuration > 0 : false);
     }
 
     private void dump() {
