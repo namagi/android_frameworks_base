@@ -2888,8 +2888,11 @@ int64_t OMXCodec::retrieveDecodingTimeUs(bool isCodecSpecific) {
 
     if (mDecodingTimeList.empty()) {
 #ifndef QCOM_HARDWARE
+#ifndef OMAP_COMPAT
         CHECK(mSignalledEOS || mNoMoreOutputData);
 #endif
+#endif
+        LOGW("retrieveDecodingTimeUs: mDecodingTimeList is empty!");
         // No corresponding input frame available.
         // This could happen when EOS is reached.
         return 0;
