@@ -16,8 +16,13 @@
 
 package com.android.systemui.recent;
 
+import android.app.Activity;
+import android.app.ActivityManager;
 import android.animation.LayoutTransition;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.DataSetObserver;
 import android.graphics.Canvas;
@@ -188,7 +193,29 @@ public class RecentsVerticalScrollView extends ScrollView
 
     @Override
     public void removeAllViewsInLayout() {
-        int count = mLinearLayout.getChildCount();
+        int savedTasks = 0;
+        ActivityManager am = (ActivityManager) mContext
+                .getSystemService(Activity.ACTIVITY_SERVICE);
+        String prevTask = am.getRunningTasks(2).get(1).topActivity
+                .getPackageName();
+
+        final PackageManager pm = mContext.getPackageManager();
+        ActivityInfo launcher = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                .resolveActivityInfo(pm, 0);
+
+        // If this yields false recent tasks were invoked from home screen, not
+        // from some user launched app in foreground in which case all apps
+        // in the recents list will be cleared.
+        // Otherwise skip the app that was being used when recents were displayed
+        // If there are multiple launchers installed and none is set as default
+        // whether it will be removed or not depends on its position in the
+        // recent tasks list
+        if (!(launcher.packageName.equals(prevTask))) {
+            savedTasks = 1;
+            Log.i(TAG, "skipped package: " + prevTask);
+        }
+
+        int count = mLinearLayout.getChildCount() - savedTasks;
         int scrollY = getScrollY();
         for (int i = 0, delayCounter = 0; i < count; i++) {
             final View child = mLinearLayout.getChildAt(i);
