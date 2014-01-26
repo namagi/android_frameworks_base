@@ -40,20 +40,20 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="48dp"
             android:paddingTop="1dp"
-            android:paddingBottom="2dp"
+            android:paddingBottom="1dp"
             android:paddingRight="3dp"
             >
 		<com.android.systemui.statusbar.policy.Clock
 		    android:id="@+id/clock"
 		    android:layout_width="wrap_content"
 		    android:layout_height="match_parent"
-		    android:layout_marginLeft="8dp"
+		    android:layout_marginLeft="6dp"
 		    android:singleLine="true"
-		    android:layout_gravity="top"
 		    android:textAppearance="@style/TextAppearance.StatusBar.Expanded.Clock"
 		    android:clickable="true"
+		    android:layout_centerVertical="true"
 		    />
 
 		<com.android.systemui.statusbar.policy.DateView
@@ -62,10 +62,11 @@
 		    android:layout_height="match_parent"
 		    android:layout_marginLeft="8dp"
 		    android:layout_marginRight="2dp"
+		    android:paddingTop="3dp"
 		    android:layout_toRightOf="@id/clock"
-		    android:layout_alignBaseline="@id/clock"
 		    android:textAppearance="@style/TextAppearance.StatusBar.Expanded.Date"
 		    android:clickable="true"
+		    android:layout_centerVertical="true"
         />
         
             <!--
