@@ -100,7 +100,7 @@ class ProcessList {
     // The maximum number of hidden processes we will keep around before
     // killing them; this is just a control to not let us go too crazy with
     // keeping around processes on devices with large amounts of RAM.
-    static final int MAX_HIDDEN_APPS = 15;
+    static final int MAX_HIDDEN_APPS = 10;
 
     // We put empty content processes after any hidden processes that have
     // been idle for less than 15 seconds.
