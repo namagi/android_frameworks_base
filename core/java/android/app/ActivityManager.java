@@ -57,6 +57,9 @@ public class ActivityManager {
 
     private final Context mContext;
     private final Handler mHandler;
+    private static long ramSize;
+    private static long totalSize;
+    private static int pixels;
 
     /*package*/ ActivityManager(Context context, Handler handler) {
         mContext = context;
@@ -220,25 +223,29 @@ public class ActivityManager {
      */
     static public boolean isHighEndGfx(Display display) {
         if (SystemProperties.get("ro.config.disable_hw_accel").equals("true")) {
+            Log.i(TAG, "hwa disabled by prop");
             return false;
-        } else {
+        } else if (totalSize == 0) {
             MemInfoReader reader = new MemInfoReader();
             reader.readMemInfo();
-            if (reader.getTotalSize() >= (512*1024*1024)) {
-                // If the device has at least 512MB RAM available to the kernel,
-                // we can afford the overhead of graphics acceleration.
-                return true;
-            }
-            Point p = new Point();
-            display.getRealSize(p);
-            int pixels = p.x * p.y;
-            if (pixels >= (1024*600)) {
-                // If this is a sufficiently large screen, then there are enough
-                // pixels on it that we'd really like to use hw drawing.
-                return true;
-            }
-            return false;
-        }
+            totalSize = reader.getTotalSize();
+            reader = null;
+          } else if (totalSize >= (512*1024*1024)) {
+              // If the device has at least 512MB RAM available to the kernel,
+              // we can afford the overhead of graphics acceleration.
+              return true;
+          }
+
+          if (pixels == 0) {
+              Point p = new Point();
+              display.getRealSize(p);
+              pixels = p.x * p.y;
+          } else if (pixels >= (1024*600)) {
+              // If this is a sufficiently large screen, then there are enough
+              // pixels on it that we'd really like to use hw drawing.
+              return true;
+          }
+          return false;
     }
 
     /**
@@ -249,9 +256,12 @@ public class ActivityManager {
      * @hide
      */
     static public boolean isLargeRAM() {
-        MemInfoReader reader = new MemInfoReader();
-        reader.readMemInfo();
-        if (reader.getTotalSize() >= (640*1024*1024)) {
+        if (ramSize == 0) {
+            MemInfoReader reader = new MemInfoReader();
+            reader.readMemInfo();
+            ramSize = reader.getTotalSize();
+            reader = null;
+        } else if (ramSize >= (640*1024*1024)) {
             // Currently 640MB RAM available to the kernel is the point at
             // which we have plenty of RAM to spare.
             return true;
