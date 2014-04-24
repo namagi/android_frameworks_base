@@ -141,6 +141,8 @@ public abstract class MetaKeyKeyListener {
     private static final int PRESSED_RETURN_VALUE = 1;
     private static final int LOCKED_RETURN_VALUE = 2;
 
+    private static boolean isCapsLockKeyOn = false;
+
     /**
      * Resets all meta state to inactive.
      */
@@ -279,7 +281,7 @@ public abstract class MetaKeyKeyListener {
         try {
             IPowerManager power = IPowerManager.Stub.asInterface(
                 ServiceManager.getService("power"));
-            if (getMetaState(content, META_SHIFT_ON) <= 0)
+            if (getMetaState(content, META_SHIFT_ON) < 1 && !isCapsLockKeyOn)
                 power.setKeyboardLight(false, 1);
             if (getMetaState(content, META_ALT_ON) <= 0)
                 power.setKeyboardLight(false, 2);
@@ -342,7 +344,7 @@ public abstract class MetaKeyKeyListener {
                 int state = content.getSpanFlags(CAP);
                 if (state == PRESSED || state == LOCKED) {
                     power.setKeyboardLight(true, 1);
-                } else {
+                } else if (!isCapsLockKeyOn) {
                     power.setKeyboardLight(false, 1);
                 }
             } catch (RemoteException doe) {}
@@ -367,6 +369,30 @@ public abstract class MetaKeyKeyListener {
 
         if (keyCode == KeyEvent.KEYCODE_SYM) {
             press(content, SYM);
+            return true;
+        }
+
+        // It's a toggle button, no need to enter in repeatedly
+        if (keyCode == KeyEvent.KEYCODE_CAPS_LOCK && event.getRepeatCount() == 0) {
+            try {
+                IPowerManager power = IPowerManager.Stub.asInterface(
+                    ServiceManager.getService("power"));
+                int state = content.getSpanFlags(CAP);
+                boolean capsLockState = event.isCapsLockOn();
+                if (!capsLockState && state == LOCKED) {
+                    isCapsLockKeyOn = true;
+                } else if (capsLockState && state == LOCKED) {
+                    isCapsLockKeyOn = false;
+                    power.setKeyboardLight(false, 1);
+                } else if (!capsLockState) {
+                    isCapsLockKeyOn = true;
+                    power.setKeyboardLight(true, 1);
+                } else if (capsLockState) {
+                    isCapsLockKeyOn = false;
+                    power.setKeyboardLight(false, 1);
+                }
+            } catch (RemoteException doe) {}
+            content.removeSpan(CAP); // Prevent CAPS<->SHIFT locking
             return true;
         }
 
