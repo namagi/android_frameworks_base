@@ -47,7 +47,7 @@ import com.android.internal.widget.multiwaveview.TargetDrawable;
 import java.net.URISyntaxException;
 
 public class NavigationRingHelpers {
-    public static final int MAX_ACTIONS = 3;
+    public static final int MAX_ACTIONS = 5;
 
     private static final String ASSIST_ICON_METADATA_NAME =
             "com.android.systemui.action_assist_icon";
